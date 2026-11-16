@@ -15,9 +15,9 @@ class ReviewPanel(tk.Frame):
                  bg='#101918', fg='#a3ff12', font=(mono, 10, 'bold'), anchor='w').pack(fill='x')
         tk.Label(self, textvariable=self.summary, bg='#101918', fg='#e8fff5',
                  font=(mono, 10), anchor='w', wraplength=900, justify='left').pack(fill='x', pady=(6, 4))
-        self.chart = tk.Canvas(self, height=88, bg='#101918', highlightthickness=0)
+        self.chart = tk.Canvas(self, height=68, bg='#101918', highlightthickness=0)
         self.chart.pack(fill='x')
-        self.table = ttk.Treeview(self, columns=('port', 'priority', 'service'), show='headings', height=4)
+        self.table = ttk.Treeview(self, columns=('port', 'priority', 'service'), show='headings', height=3)
         for name, title, width in [('port', 'PORT', 85), ('priority', 'REVIEW TASK / CONDITIONAL', 260), ('service', 'INFERRED SERVICE / UNVERIFIED', 360)]:
             self.table.heading(name, text=title)
             self.table.column(name, width=width, anchor='w')
@@ -28,7 +28,7 @@ class ReviewPanel(tk.Frame):
         scrollbar.pack(side='right', fill='y')
         self.table.configure(yscrollcommand=scrollbar.set)
         self.table.bind('<<TreeviewSelect>>', self.select)
-        self.detail = tk.Text(self, height=10, wrap='word', bg='#080f0e', fg='#e8fff5',
+        self.detail = tk.Text(self, height=5, wrap='word', bg='#080f0e', fg='#e8fff5',
                               font=(mono, 10), padx=12, pady=10, relief='flat', insertbackground='#a3ff12')
         detail_scroll = ttk.Scrollbar(self, orient='vertical', command=self.detail.yview)
         detail_scroll.pack(side='right', fill='y', pady=(8,0))
@@ -52,9 +52,9 @@ class ReviewPanel(tk.Frame):
         self.chart.delete('all')
         for row, (name, color) in enumerate(COLORS.items()):
             count = sum(item['review_priority'] == name for item in items)
-            y = row * 21 + 4
+            y = row * 16 + 3
             self.chart.create_text(0, y+7, text=f'{name}: {count}', anchor='w', fill=color)
-            self.chart.create_rectangle(230, y, 230 + 400 * count / max(1, len(items)), y+12, fill=color, outline='')
+            self.chart.create_rectangle(230, y, 230 + 400 * count / max(1, len(items)), y+10, fill=color, outline='')
         if selected and selected[0] in self.items:
             self.table.selection_set(selected[0])
         else:
