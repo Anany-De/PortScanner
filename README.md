@@ -20,6 +20,10 @@
 
 An offline-capable Python desktop GUI for Windows and Linux, built with Tkinter and the standard library. No third-party Python packages, cloud services, telemetry, or remote assets are required.
 
+**Offline / local:** scan your own localhost or reachable local-network systems without internet; the local-listener inventory is limited to your own computer.
+
+**Online / external:** scan reachable external IPs or hostnames with network connectivity. This checks TCP service reachability, not a full website vulnerability audit. **Scan only systems you own or have explicit permission to test, within the authorized scope. Public availability is not permission.**
+
 ## Features
 
 - Cyber-terminal styling with local monospace fonts, neon accents and readable controls.
