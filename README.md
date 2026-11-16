@@ -1,9 +1,28 @@
-# PortScanner
+<div align="center">
+
+# `[>] PORTSCANNER`
+### LOCAL FIRST. EVIDENCE FIRST.
+
+**Cyber-terminal desktop scanner · Windows + Linux · Python + Tkinter**
+
+![Status: Work in progress](https://img.shields.io/badge/status-WORK_IN_PROGRESS-a3ff12?style=for-the-badge&labelColor=101918)
+![Runtime: Python 3.10+](https://img.shields.io/badge/Python-3.10%2B-70d8ff?style=for-the-badge&labelColor=101918)
+![Dependencies: Standard library](https://img.shields.io/badge/dependencies-STANDARD_LIBRARY-bcb7ff?style=for-the-badge&labelColor=101918)
+
+**[Quick start](#windows-setup) · [Scan modes](#features) · [Defensive review](#defensive-service-review-experimental) · [Checks](#verification-and-benchmarks) · [Roadmap](#roadmap)**
+
+</div>
+
+---
+
+> **WORK IN PROGRESS / IN DEVELOPMENT** — experimental desktop tool, not a stable release or a verified vulnerability scanner. Windows checks pass; Linux execution remains unverified.
 
 An offline-capable Python desktop GUI for Windows and Linux, built with Tkinter and the standard library. No third-party Python packages, cloud services, telemetry, or remote assets are required.
 
 ## Features
 
+- Cyber-terminal styling with local monospace fonts, neon accents and readable controls.
+- Offline defensive-review chart, selectable evidence and remediation guidance with bundled source links.
 - Dark desktop interface with target, port ranges, connection timeout, progress, and Stop controls.
 - Real TCP connect scans for a single IPv4/IPv6 address or hostname, with up to 256 concurrent connections.
 - Explicit **Local listeners · no probes** action for fast IPv4 loopback socket inventory.
@@ -55,7 +74,7 @@ A standalone Python runtime or executable is not bundled. Once Python/Tk prerequ
 4. For a local socket snapshot instead, use **Local listeners · no probes** with a numeric IPv4 loopback address.
 5. Stop retains partial results. Export CSV saves discovered results and the method/status.
 
-CSV fields: `target`, `port`, `protocol`, `state`, `service_hint`, `connect_ms`, `scan_status`, `method`. Inventory has no connection timing. Exports can contain network details; review them before sharing. Default `portscan*.csv` exports and the `exports/` folder are ignored by Git.
+CSV includes target/resolved address, TCP state, service hint, timing, scan status/method, conditional review priority, evidence, confidence, recommendations, vulnerability-assessment status, source link and review date. Inventory has no connection timing. Exports can contain network details; review them before sharing. Default `portscan*.csv` exports and the `exports/` folder are ignored by Git.
 
 ## Limitations
 
@@ -72,14 +91,14 @@ CSV fields: `target`, `port`, `protocol`, `state`, `service_hint`, `connect_ms`,
 Windows:
 
 ```powershell
-.\.venv\Scripts\python.exe -m unittest -v test_portscanner.py
+.\.venv\Scripts\python.exe -m unittest discover -v
 .\.venv\Scripts\python.exe benchmark_local.py
 ```
 
 Linux:
 
 ```sh
-.venv/bin/python -m unittest -v test_portscanner.py
+.venv/bin/python -m unittest discover -v
 .venv/bin/python benchmark_local.py
 ```
 
@@ -92,7 +111,8 @@ Observed Windows timings for roughly 5,000 ports were about 10.3 seconds for TCP
 - `portscanner.py` — desktop GUI and TCP engine.
 - `local_inventory.py` — Windows/Linux local IPv4 inventory.
 - `Launch.cmd`, `launch.sh` — virtual-environment launchers.
-- `test_portscanner.py` — regression checks.
+- `assessment.py`, `assessment_ui.py` — bundled guidance catalog and review dashboard.
+- `test_portscanner.py`, `test_assessment.py` — regression checks.
 - `benchmark_scan.py`, `benchmark_local.py` — loopback benchmarks.
 
 ## Responsible use
@@ -102,3 +122,39 @@ Scan only systems you own or have permission to test. Choose ranges and timeouts
 ## License
 
 A license has not been selected. No open-source license grant is included yet.
+
+## Defensive service review (experimental)
+
+The **Defensive review / warnings** tab summarizes observed services by conditional review task: Restrict access, Review configuration, Identify service, or Local review. Select a row for observed evidence, inferred service, confidence, risk conditions, defensive recommendations, source URL and review date. These are review priorities, not vulnerability severity or proof of exploitability. Unknown ports receive identification guidance; they are not assumed safe.
+
+TCP results work for your own localhost, reachable local-network hosts without internet, and external IPs/hostnames you are authorized to test. External targets require working networking; offline operation cannot reach internet hosts. Address context is based on the resolved IP, not proof of public exposure. A successful connection proves reachability only from the scanning computer at that moment. Inventory is a separate local OS snapshot with remote reachability not assessed.
+
+Service identity is only a port-number guess. No version identification, CVE matching, TLS/authentication verification, banner collection, exploitation, credential guesses, login attempts or automatic firewall changes are performed. **Verified vulnerabilities: not assessed.** Missing results and partial scans do not establish safety. Guidance is bundled in `assessment.py`, reviewed 2026-11-17; links are references, not runtime network dependencies. Sources can change after review. CSV exports include all assessment fields and the resolved address alongside method and scan status.
+
+Implemented: TCP scanning, local listener inventory, offline conditional guidance and chart, source-backed detail, CSV export. Tested on Windows using controlled loopback sockets and synthetic assessment inputs; no external targets were probed for development verification. Not verified: Linux execution, real-world configuration/vulnerability detection, or suitability as a security audit.
+
+Catalog sources: [CISA ransomware guide](https://www.cisa.gov/sites/default/files/publications/CISA_MS-ISAC_Ransomware%20Guide_S508C_.pdf), [FBI RDP guidance](https://www.ic3.gov/PSA/2018/PSA180927), [Microsoft SMB protection](https://learn.microsoft.com/en-us/windows-server/storage/file-server/smb-secure-traffic), [Redis security](https://redis.io/docs/latest/manual/security/), [PostgreSQL authentication](https://www.postgresql.org/docs/current/auth-pg-hba-conf.html), [OpenSSH configuration](https://man.openbsd.org/sshd_config), [OWASP TLS guidance](https://cheatsheetseries.owasp.org/cheatsheets/Transport_Layer_Security_Cheat_Sheet.html).
+
+## Development status
+
+| Capability | Current status |
+| --- | --- |
+| TCP probes, Stop, progress, CSV | Implemented; Windows loopback checks |
+| Local IPv4 listener inventory | Implemented; Windows checked; Linux unverified |
+| Conditional service guidance and dashboard | Implemented, experimental; synthetic evidence/export checks |
+| Offline native launch | Standard library; host Python/Tk required |
+| Linux GUI / performance | Implemented, execution validation pending |
+| Version/CVE detection or verified vulnerabilities | Not implemented; explicitly not assessed |
+| Standalone portable binaries | Not bundled |
+
+This is an **in-development project**, not a security certification or stable release. Badges describe project properties, not passing CI. README badge images are hosted by Shields.io; the application has no dependency on those images or internet access.
+
+## Roadmap
+
+- [ ] Validate the GUI, inventory and networking on Linux.
+- [ ] Improve keyboard navigation, resizing and accessibility across platforms.
+- [ ] Expand the reviewed offline service catalog with careful evidence labeling.
+- [ ] Evaluate separate portable Windows/Linux builds.
+- [ ] Add broader test automation and document reproducible platform checks.
+
+No Docker runtime is required or planned for the current native launch path. No license has been selected; a public repository alone does not grant an open-source license.

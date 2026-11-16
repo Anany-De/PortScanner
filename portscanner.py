@@ -2,6 +2,8 @@
 import csv
 import ipaddress
 from local_inventory import inventory
+from assessment import assess
+from assessment_ui import ReviewPanel
 import errno
 import select
 from bisect import bisect_left
@@ -10,13 +12,14 @@ import socket
 import threading
 import time
 import tkinter as tk
+import tkinter.font
 from tkinter import ttk, filedialog, messagebox
 
-BG = '#0b1220'
-PANEL = '#131e30'
-TEXT = '#e5edf8'
-MUTED = '#91a3bf'
-ACCENT = '#57e0b5'
+BG = '#070b0b'
+PANEL = '#101918'
+TEXT = '#e8fff5'
+MUTED = '#a0bdb0'
+ACCENT = '#a3ff12'
 
 
 def parse_ports(value):
@@ -111,38 +114,42 @@ def scan(target, ports, timeout, stop, events):
 class App(tk.Tk):
     def __init__(self):
         super().__init__()
-        self.title('PortScanner | Network workspace')
-        self.geometry('1080x740')
-        self.minsize(860, 640)
+        self.title('PortScanner // Network terminal')
+        self.geometry('1200x900')
+        self.minsize(1100, 820)
         self.configure(bg=BG)
+        self.mono = 'Consolas' if 'Consolas' in tk.font.families(self) else 'DejaVu Sans Mono'
         self.events = queue.Queue()
         self.stop_event = threading.Event()
         self.running = False
         self.rows = []
         self.started = 0
         self.scan_target = ''
+        self.resolved_address = ''
+        self.local_mode = False
         style = ttk.Style(self)
         style.theme_use('clam')
-        style.configure('.', background=PANEL, foreground=TEXT, font=('Segoe UI', 10))
-        style.configure('TEntry', fieldbackground='#0e1829', foreground=TEXT, insertcolor=TEXT, padding=10)
-        style.configure('TButton', padding=(16, 10), background='#253750', foreground=TEXT, borderwidth=0)
-        style.map('TButton', background=[('active', '#35506c')], foreground=[('disabled', '#75849b')])
-        style.configure('Accent.TButton', background=ACCENT, foreground='#08251e', font=('Segoe UI', 10, 'bold'))
-        style.map('Accent.TButton', background=[('active', '#8bf0cf'), ('disabled', '#304b49')])
-        style.configure('Treeview', background=PANEL, fieldbackground=PANEL, foreground=TEXT, rowheight=38, borderwidth=0)
-        style.configure('Treeview.Heading', background='#1c2a40', foreground=MUTED, padding=10, font=('Segoe UI', 9, 'bold'))
-        style.map('Treeview', background=[('selected', '#24564e')])
-        style.configure('Horizontal.TProgressbar', background=ACCENT, troughcolor='#21314a', borderwidth=0)
+        style.configure('.', background=PANEL, foreground=TEXT, font=(self.mono, 10))
+        style.configure('TEntry', fieldbackground='#080f0e', foreground=TEXT, insertcolor=TEXT, padding=10)
+        style.configure('TButton', padding=(16, 10), background='#20352b', foreground=TEXT, borderwidth=0)
+        style.map('TButton', background=[('active', '#345542')], foreground=[('disabled', '#7c978a')])
+        style.configure('Accent.TButton', background=ACCENT, foreground='#0c1600', font=(self.mono, 10, 'bold'))
+        style.map('Accent.TButton', background=[('active', '#c4ff6a'), ('disabled', '#344528')])
+        style.configure('Treeview', background=PANEL, fieldbackground=PANEL, foreground=TEXT, rowheight=40, borderwidth=0)
+        style.configure('Treeview.Heading', background='#1b2d25', foreground=MUTED, padding=10, font=(self.mono, 9, 'bold'))
+        style.map('Treeview', background=[('selected', '#325737')])
+        style.configure('Horizontal.TProgressbar', background=ACCENT, troughcolor='#22362b', borderwidth=0)
         shell = tk.Frame(self, bg=BG, padx=32, pady=24)
         shell.pack(fill='both', expand=True)
         header = tk.Frame(shell, bg=BG)
         header.pack(fill='x')
-        self.label(header, '◉  PORTSCANNER', 12, ACCENT, bold=True).pack(side='left')
-        self.label(header, 'LOCAL TOOLS  /  TCP CONNECT', 9, MUTED).pack(side='right')
-        self.label(shell, 'A clearer view of your network.', 25, bold=True).pack(anchor='w', pady=(24, 5))
-        self.label(shell, 'Discover listening TCP ports. Keep your workflow local.', 11, MUTED).pack(anchor='w')
+        self.label(header, '[>] PORTSCANNER', 13, ACCENT, bold=True).pack(side='left')
+        self.label(header, 'OFFLINE  //  TCP CONNECT', 9, MUTED).pack(side='right')
+        self.label(shell, 'MAP THE ATTACK SURFACE.', 27, bold=True).pack(anchor='w', pady=(24, 5))
+        self.label(shell, 'WORK IN PROGRESS // 01 TARGET  /  02 TCP PROBE  /  03 DEFENSIVE REVIEW', 11, MUTED).pack(anchor='w')
+        tk.Frame(shell, bg=ACCENT, height=2).pack(fill='x', pady=(20, 0))
         config = tk.Frame(shell, bg=PANEL, padx=20, pady=18)
-        config.pack(fill='x', pady=(24, 16))
+        config.pack(fill='x', pady=(0, 18))
         config.columnconfigure(0, weight=3)
         config.columnconfigure(1, weight=3)
         config.columnconfigure(2, weight=1)
@@ -157,16 +164,16 @@ class App(tk.Tk):
             self.inputs.append(entry)
         actions = tk.Frame(config, bg=PANEL)
         actions.grid(row=2, column=0, columnspan=3, sticky='ew', pady=(14, 0))
-        self.start_button = ttk.Button(actions, text='Start scan  →', style='Accent.TButton', command=self.start)
+        self.start_button = ttk.Button(actions, text='[>] Start scan', style='Accent.TButton', command=self.start)
         self.start_button.pack(side='left')
-        self.stop_button = ttk.Button(actions, text='Stop', command=self.stop, state='disabled')
+        self.stop_button = ttk.Button(actions, text='[X] Stop', command=self.stop, state='disabled')
         self.stop_button.pack(side='left', padx=8)
         self.inventory_button = ttk.Button(actions, text='Local listeners · no probes', command=lambda: self.start(local=True))
         self.inventory_button.pack(side='left')
         ttk.Button(actions, text='Common ports', command=lambda: self.ports.set('21,22,25,53,80,110,139,143,443,445,465,587,993,995,1433,3306,3389,5432,5900,6379,8080,8443')).pack(side='right')
         stats = tk.Frame(shell, bg=BG)
         stats.pack(fill='x')
-        self.status = tk.StringVar(value='Ready to scan')
+        self.status = tk.StringVar(value='IDLE // Awaiting target')
         self.count = tk.StringVar(value='0 open ports')
         self.label(stats, '', 11, variable=self.status).pack(side='left')
         self.label(stats, '', 11, ACCENT, variable=self.count, bold=True).pack(side='right')
@@ -176,10 +183,14 @@ class App(tk.Tk):
         toolbar.pack(fill='x', pady=(0, 10))
         self.result_heading = tk.StringVar(value='OPEN PORTS · TCP PROBES')
         self.label(toolbar, '', 10, MUTED, bold=True, variable=self.result_heading).pack(side='left')
-        self.export_button = ttk.Button(toolbar, text='Export CSV', command=self.export, state='disabled')
+        self.export_button = ttk.Button(toolbar, text='[↓] Export CSV', command=self.export, state='disabled')
         self.export_button.pack(side='right')
-        table = tk.Frame(shell, bg=PANEL)
-        table.pack(fill='both', expand=True)
+        notebook = ttk.Notebook(shell)
+        notebook.pack(fill='both', expand=True)
+        table = tk.Frame(notebook, bg=PANEL)
+        notebook.add(table, text='  TCP RESULTS / LISTENERS  ')
+        self.review = ReviewPanel(notebook, self.mono)
+        notebook.add(self.review, text='  DEFENSIVE REVIEW / WARNINGS  ')
         self.tree = ttk.Treeview(table, columns=('port', 'state', 'service', 'latency'), show='headings', selectmode='browse')
         for name, caption, width in [('port', 'PORT / TCP', 130), ('state', 'STATE', 130), ('service', 'SERVICE HINT', 300), ('latency', 'CONNECT TIME', 160)]:
             self.tree.heading(name, text=caption)
@@ -187,15 +198,17 @@ class App(tk.Tk):
         scrollbar = ttk.Scrollbar(table, orient='vertical', command=self.tree.yview)
         self.tree.configure(yscrollcommand=scrollbar.set)
         scrollbar.pack(side='right', fill='y')
+        self.tree.tag_configure('even', background=PANEL, foreground=ACCENT)
+        self.tree.tag_configure('odd', background='#14221c', foreground=ACCENT)
         self.tree.pack(fill='both', expand=True)
-        self.note = tk.StringVar(value='No results yet. Start a scan to discover open ports.')
+        self.note = tk.StringVar(value='// No results yet. Start a real scan or request a local listener inventory.')
         self.label(shell, '', 9, MUTED, variable=self.note).pack(anchor='w', pady=(12, 0))
         self.label(shell, 'Scan only systems you own or have permission to test.  •  No cloud services or telemetry.', 9, MUTED).pack(anchor='w', pady=(8, 0))
         self.protocol('WM_DELETE_WINDOW', self.close)
-        self.after(75, self.poll)
+        self.poll_job = self.after(75, self.poll)
 
     def label(self, parent, text, size, color=TEXT, bold=False, bg=BG, variable=None):
-        return tk.Label(parent, text=text, textvariable=variable, bg=bg, fg=color, font=('Segoe UI', size, 'bold' if bold else 'normal'))
+        return tk.Label(parent, text=text, textvariable=variable, bg=bg, fg=color, font=(self.mono, size, 'bold' if bold else 'normal'))
 
     def start(self, local=False):
         if self.running:
@@ -220,7 +233,9 @@ class App(tk.Tk):
         self.local_mode = local
         self.result_heading.set('LOCAL LISTENERS · NO PROBES' if local else 'OPEN PORTS · TCP PROBES')
         self.scan_target = target
+        self.resolved_address = target
         self.rows.clear()
+        self.review.refresh([], 'Starting; no conclusion available')
         self.tree.delete(*self.tree.get_children())
         self.stop_event = threading.Event()
         self.started = time.monotonic()
@@ -244,18 +259,25 @@ class App(tk.Tk):
         self.status.set('Stopping… waiting for active connections')
         self.stop_button.configure(state='disabled')
 
+    def assessments(self):
+        return [assess(port, self.local_mode, self.resolved_address) for port, _, _ in self.rows]
+
     def poll(self):
+        review_dirty = False
         for _ in range(1000):
             try:
                 kind, value = self.events.get_nowait()
             except queue.Empty:
                 break
             if kind == 'resolved':
+                self.resolved_address = value
+                review_dirty = True
                 self.note.set(f'{self.scan_target} → {value} • TCP connect scan • Service names are unverified hints.')
             elif kind == 'open':
+                review_dirty = True
                 index = bisect_left(self.rows, value)
                 self.rows.insert(index, value)
-                self.tree.insert('', index, values=(value[0], 'Listening' if self.local_mode else '● Open', value[1], 'Not probed' if value[2] is None else f'{value[2]:.1f} ms'))
+                self.tree.insert('', index, tags=('even' if index % 2 == 0 else 'odd',), values=(value[0], 'Listening' if self.local_mode else '● Open', value[1], 'Not probed' if value[2] is None else f'{value[2]:.1f} ms'))
                 self.count.set(f'{len(self.rows)} ' + ('listeners' if self.local_mode else 'open ports'))
             elif kind == 'progress':
                 self.progress['value'] = value
@@ -265,6 +287,7 @@ class App(tk.Tk):
                 self.failed = True
                 self.note.set('Scan failed: ' + value)
             elif kind == 'done':
+                review_dirty = True
                 self.running = False
                 self.status.set(f'{"Failed" if self.failed else "Stopped" if value else "Finished"} · {int(self.progress["value"]):,} / {self.total:,} ports · {time.monotonic() - self.started:.3f}s')
                 self.start_button.configure(state='normal')
@@ -273,7 +296,9 @@ class App(tk.Tk):
                 self.export_button.configure(state='normal' if self.rows else 'disabled')
                 for entry in self.inputs:
                     entry.configure(state='normal')
-        self.after(75, self.poll)
+        if review_dirty:
+            self.review.refresh(self.assessments(), self.status.get())
+        self.poll_job = self.after(75, self.poll)
 
     def export(self):
         path = filedialog.asksaveasfilename(title='Export open ports', defaultextension='.csv', filetypes=[('CSV files', '*.csv')], initialfile='portscan.csv')
@@ -282,15 +307,18 @@ class App(tk.Tk):
         try:
             with open(path, 'w', newline='', encoding='utf-8-sig') as handle:
                 writer = csv.writer(handle)
-                writer.writerow(['target', 'port', 'protocol', 'state', 'service_hint', 'connect_ms', 'scan_status', 'method'])
+                writer.writerow(['target', 'port', 'protocol', 'state', 'service_hint', 'connect_ms', 'scan_status', 'method', 'resolved_address', 'review_priority', 'service_inference', 'evidence', 'context', 'confidence', 'condition', 'recommendation', 'vulnerabilities', 'source', 'reviewed'])
                 for port, service, latency in self.rows:
-                    writer.writerow([self.scan_target, port, 'TCP', 'listening' if self.local_mode else 'open', service, latency, self.status.get(), 'local_inventory_no_probes' if self.local_mode else 'tcp_connect'])
+                    guidance = assess(port, self.local_mode, self.resolved_address)
+                    writer.writerow([self.scan_target, port, 'TCP', 'listening' if self.local_mode else 'open', service, latency, self.status.get(), 'local_inventory_no_probes' if self.local_mode else 'tcp_connect', self.resolved_address, *[guidance[key] for key in ('review_priority', 'service_inference', 'evidence', 'context', 'confidence', 'condition', 'recommendation', 'vulnerabilities', 'source', 'reviewed')]])
             self.note.set('Exported ' + path)
         except OSError as exc:
             messagebox.showerror('Export failed', str(exc))
 
     def close(self):
         self.stop_event.set()
+        if getattr(self, 'poll_job', None):
+            self.after_cancel(self.poll_job)
         self.destroy()
 
 
