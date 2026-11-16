@@ -7,6 +7,7 @@
 
 ![Status: Work in progress](https://img.shields.io/badge/status-WORK_IN_PROGRESS-a3ff12?style=for-the-badge&labelColor=101918)
 ![Runtime: Python 3.10+](https://img.shields.io/badge/Python-3.10%2B-70d8ff?style=for-the-badge&labelColor=101918)
+[![License: MIT](https://img.shields.io/badge/license-MIT-a3ff12?style=for-the-badge&labelColor=101918)](LICENSE)
 ![Dependencies: Standard library](https://img.shields.io/badge/dependencies-STANDARD_LIBRARY-bcb7ff?style=for-the-badge&labelColor=101918)
 
 **[Quick start](#windows-setup) · [Scan modes](#features) · [Defensive review](#defensive-service-review-experimental) · [Checks](#verification-and-benchmarks) · [Roadmap](#roadmap)**
@@ -121,7 +122,11 @@ Scan only systems you own or have permission to test. Choose ranges and timeouts
 
 ## License
 
-A license has not been selected. No open-source license grant is included yet.
+Licensed under the [MIT License](LICENSE). Copyright (c) 2026 Anany-De.
+
+MIT permits reuse, modification and redistribution, including commercial use, provided the copyright and permission notice are retained. The software is provided without warranty. Contributions can be proposed through pull requests; the license does not grant repository write access.
+
+The license applies to this project's original code and documentation. External reference documents and Shields.io badge assets remain under their respective owners' terms; they are not relicensed here. Python/Tk runtimes are not bundled and retain their own licenses.
 
 ## Defensive service review (experimental)
 
@@ -157,4 +162,4 @@ This is an **in-development project**, not a security certification or stable re
 - [ ] Evaluate separate portable Windows/Linux builds.
 - [ ] Add broader test automation and document reproducible platform checks.
 
-No Docker runtime is required or planned for the current native launch path. No license has been selected; a public repository alone does not grant an open-source license.
+No Docker runtime is required or planned for the current native launch path. Project source is available under the [MIT License](LICENSE).
