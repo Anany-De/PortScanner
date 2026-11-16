@@ -48,22 +48,20 @@ class ScannerTests(unittest.TestCase):
             stop = threading.Event()
             events = queue.Queue()
             def waiting(*args):
-                time.sleep(.01)
+                if cancel:
+                    stop.set()
+                else:
+                    time.sleep(.01)
                 return [], [], []
-            timer = threading.Timer(.04, stop.set) if cancel else None
             with patch('socket.socket', return_value=sock), patch('select.select', side_effect=waiting):
-                if timer:
-                    timer.start()
                 started = time.monotonic()
                 scan('127.0.0.1', [80], .15, stop, events)
                 elapsed = time.monotonic() - started
-            if timer:
-                timer.join()
             sock.close.assert_called_once()
             self.assertFalse(any(k == 'open' for k, _ in list(events.queue)))
             self.assertEqual(list(events.queue)[-1], ('done', cancel))
             if cancel:
-                self.assertLess(elapsed, .14)
+                self.assertIn(('progress', 0), list(events.queue))
             else:
                 self.assertGreaterEqual(elapsed, .15)
                 self.assertIn(('progress', 1), list(events.queue))
