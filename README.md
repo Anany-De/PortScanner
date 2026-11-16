@@ -59,9 +59,9 @@ sh launch.sh
 
 A graphical desktop is required. Close the Tk test window before launching. The shell launcher does not need an executable permission bit when run with `sh`.
 
-## Offline and pen-drive use
+## Offline operation and Python environments
 
-Copy the source folder to the destination and create `.venv` using that machine's Python. Virtual environments are not portable between Windows and Linux, Python installations, or moved paths/drive letters; recreate them after moving the project. `.venv` is excluded from Git.
+Clone or download the project and create `.venv` using your system's Python. Recreate the environment separately for each operating system, Python installation, or changed project path. `.venv` is excluded from Git.
 
 No pip installation is needed. If dependencies are added later, install them through the project interpreter (`.venv\Scripts\python.exe -m pip` on Windows or `.venv/bin/python -m pip` on Linux). Do not install globally.
 
@@ -150,7 +150,7 @@ Catalog sources: [CISA ransomware guide](https://www.cisa.gov/sites/default/file
 | Offline native launch | Standard library; host Python/Tk required |
 | Linux GUI / performance | Implemented, execution validation pending |
 | Version/CVE detection or verified vulnerabilities | Not implemented; explicitly not assessed |
-| Standalone portable binaries | Not bundled |
+| Standalone executables | Not bundled |
 
 This is an **in-development project**, not a security certification or stable release. Badges describe project properties, not passing CI. README badge images are hosted by Shields.io; the application has no dependency on those images or internet access.
 
@@ -159,7 +159,7 @@ This is an **in-development project**, not a security certification or stable re
 - [ ] Validate the GUI, inventory and networking on Linux.
 - [ ] Improve keyboard navigation, resizing and accessibility across platforms.
 - [ ] Expand the reviewed offline service catalog with careful evidence labeling.
-- [ ] Evaluate separate portable Windows/Linux builds.
+- [ ] Evaluate standalone Windows/Linux builds.
 - [ ] Add broader test automation and document reproducible platform checks.
 
 No Docker runtime is required or planned for the current native launch path. Project source is available under the [MIT License](LICENSE).
