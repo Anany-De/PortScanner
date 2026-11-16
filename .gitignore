@@ -1,0 +1,33 @@
+# Project environments and Python caches
+.venv/
+venv/
+env/
+__pycache__/
+*.py[cod]
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.coverage
+htmlcov/
+
+# Packaging outputs
+build/
+dist/
+*.egg-info/
+
+# Local editor / operating-system files
+.vscode/
+.idea/
+*.swp
+*~
+.DS_Store
+Thumbs.db
+Desktop.ini
+
+# Local secrets and generated scan exports
+.env
+.env.*
+!.env.example
+exports/
+portscan*.csv
+*.log
