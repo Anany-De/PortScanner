@@ -139,6 +139,7 @@ class App(tk.Tk):
         style.configure('Accent.TButton', background=ACCENT, foreground='#0c1600', font=(self.mono, 10, 'bold'))
         style.map('Accent.TButton', background=[('active', '#c4ff6a'), ('disabled', '#344528')])
         style.configure('Treeview', background=PANEL, fieldbackground=PANEL, foreground=TEXT, rowheight=40, borderwidth=0)
+        style.configure('Review.Treeview', rowheight=25)
         style.configure('Treeview.Heading', background='#1b2d25', foreground=MUTED, padding=10, font=(self.mono, 9, 'bold'))
         style.map('Treeview', background=[('selected', '#325737')])
         style.configure('Horizontal.TProgressbar', background=ACCENT, troughcolor='#22362b', borderwidth=0)
@@ -207,6 +208,9 @@ class App(tk.Tk):
         self.note = tk.StringVar(value='// No results yet. Start a real scan or request a local listener inventory.')
         self.label(shell, '', 9, MUTED, variable=self.note).pack(anchor='w', pady=(12, 0))
         self.label(shell, 'Scan only systems you own or have permission to test.  •  No cloud services or telemetry.', 9, MUTED).pack(anchor='w', pady=(8, 0))
+        # Reserve footer space before allowing the notebook to expand.
+        notebook.pack_forget()
+        notebook.pack(fill='both', expand=True)
         self.protocol('WM_DELETE_WINDOW', self.close)
         self.poll_job = self.after(75, self.poll)
 

@@ -15,26 +15,33 @@ class ReviewPanel(tk.Frame):
                  bg='#101918', fg='#a3ff12', font=(mono, 10, 'bold'), anchor='w').pack(fill='x')
         tk.Label(self, textvariable=self.summary, bg='#101918', fg='#e8fff5',
                  font=(mono, 10), anchor='w', wraplength=900, justify='left').pack(fill='x', pady=(6, 4))
-        self.chart = tk.Canvas(self, height=68, bg='#101918', highlightthickness=0)
+        body = ttk.Panedwindow(self, orient='horizontal')
+        body.pack(fill='both', expand=True)
+        left = tk.Frame(body, bg='#101918')
+        right = tk.Frame(body, bg='#080f0e')
+        body.add(left, weight=2)
+        body.add(right, weight=3)
+        self.chart = tk.Canvas(left, height=68, width=400, bg='#101918', highlightthickness=0)
         self.chart.pack(fill='x')
-        self.table = ttk.Treeview(self, columns=('port', 'priority', 'service'), show='headings', height=3)
-        for name, title, width in [('port', 'PORT', 85), ('priority', 'REVIEW TASK / CONDITIONAL', 260), ('service', 'INFERRED SERVICE / UNVERIFIED', 360)]:
-            self.table.heading(name, text=title)
-            self.table.column(name, width=width, anchor='w')
-        table_frame = tk.Frame(self, bg='#101918')
+        table_frame = tk.Frame(left, bg='#101918')
         table_frame.pack(fill='both', expand=True)
-        self.table.pack(in_=table_frame, side='left', fill='both', expand=True)
+        self.table = ttk.Treeview(table_frame, columns=('port', 'priority', 'service'), show='headings', height=2, style='Review.Treeview')
+        for name, title, width in [('port', 'PORT', 55), ('priority', 'REVIEW TASK', 150), ('service', 'SERVICE GUESS', 170)]:
+            self.table.heading(name, text=title)
+            self.table.column(name, width=width, minwidth=45, anchor='w')
+        self.table.pack(side='left', fill='both', expand=True)
         scrollbar = ttk.Scrollbar(table_frame, orient='vertical', command=self.table.yview)
         scrollbar.pack(side='right', fill='y')
         self.table.configure(yscrollcommand=scrollbar.set)
         self.table.bind('<<TreeviewSelect>>', self.select)
-        self.detail = tk.Text(self, height=5, wrap='word', bg='#080f0e', fg='#e8fff5',
+        self.detail = tk.Text(right, height=6, width=50, wrap='word', bg='#080f0e', fg='#e8fff5',
                               font=(mono, 10), padx=12, pady=10, relief='flat', insertbackground='#a3ff12')
-        detail_scroll = ttk.Scrollbar(self, orient='vertical', command=self.detail.yview)
-        detail_scroll.pack(side='right', fill='y', pady=(8,0))
+        detail_scroll = ttk.Scrollbar(right, orient='vertical', command=self.detail.yview)
+        detail_scroll.pack(side='right', fill='y')
         self.detail.configure(yscrollcommand=detail_scroll.set)
-        self.detail.pack(fill='both', expand=True, pady=(8, 0))
+        self.detail.pack(fill='both', expand=True)
         self.write('Select a result to inspect evidence, conditional concerns, recommended actions and source links.\nNo banners, logins, exploitation or firewall changes are performed.')
+        self.refresh([], 'No results yet')
 
     def write(self, text):
         self.detail.configure(state='normal')
@@ -54,7 +61,7 @@ class ReviewPanel(tk.Frame):
             count = sum(item['review_priority'] == name for item in items)
             y = row * 16 + 3
             self.chart.create_text(0, y+7, text=f'{name}: {count}', anchor='w', fill=color)
-            self.chart.create_rectangle(230, y, 230 + 400 * count / max(1, len(items)), y+10, fill=color, outline='')
+            self.chart.create_rectangle(200, y, 200 + 180 * count / max(1, len(items)), y+10, fill=color, outline='')
         if selected and selected[0] in self.items:
             self.table.selection_set(selected[0])
         else:
